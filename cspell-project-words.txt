@@ -1,0 +1,50 @@
+# Code
+automerge
+CONV
+MSYS
+MSYS
+nofile
+NZEC
+PATHCONV
+
+# Own terms
+doppler
+dopplerdock
+dplr
+fromdoppler
+mseditor
+mydplr
+
+# Technical terms
+Liskov
+
+# our services and providers
+aspnet
+aspnetcore
+cdndoppler
+dockerhub
+dockerlint
+dotnet
+eclint
+esnext
+firefox
+gitlint
+hadolint
+hellang
+jenkins
+jenkinsfile
+jorisroovers
+koalaman
+linkedin
+loggly
+openssh
+pinterest
+react-cool-onclickoutside
+serilog
+shellcheck
+swashbuckle
+tanstack
+ttionya
+unlayer
+whatsapp
+xunit
