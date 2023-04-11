@@ -28,6 +28,7 @@ dotnet
 eclint
 esnext
 firefox
+github
 gitlint
 hadolint
 hellang
