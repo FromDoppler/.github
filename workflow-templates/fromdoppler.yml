@@ -1,0 +1,30 @@
+name: FromDoppler
+
+on:
+  pull_request:
+    branches: ["$default-branch"]
+  push:
+    branches: ["$default-branch", "INT"]
+    tags:
+      - v*.*.*
+
+jobs:
+  fromdoppler:
+    name: Conventions
+    uses: FromDoppler/.github/.github/workflows/conventions.yml@main
+  dotnet:
+    name: .NET
+    uses: FromDoppler/.github/.github/workflows/dotnet.yml@main
+  docker:
+    if: ${{ github.event_name == 'push' }}
+    name: Docker
+    uses: FromDoppler/.github/.github/workflows/continuous-delivery-dockerfile.yml@main
+    secrets: inherit
+    with:
+      dockerfile-path: "Dockerfile"
+      dockerhub-image-name: "doppler-dockerhub-image-name-example"
+  docker-compose:
+    if: ${{ github.event_name == 'push' }}
+    name: Docker
+    uses: FromDoppler/.github/.github/workflows/continuous-delivery-docker-compose.yml@main
+    secrets: inherit
