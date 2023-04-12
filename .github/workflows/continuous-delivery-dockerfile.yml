@@ -1,0 +1,96 @@
+name: Continuous Delivery
+
+on:
+  workflow_call:
+    inputs:
+      dockerfile-path:
+        description: "Path to Dockerfile to use for build image"
+        default: "Dockerfile"
+        type: string
+      dockerhub-image-name:
+        description: "The name of the image when delivery to DockerHub registry"
+        required: true
+        type: string
+
+env:
+  SOURCE_VERSION: "${{ github.ref_name }}+${{ github.sha }}@${{ github.server_url}}/${{ github.repository }}"
+
+jobs:
+  github-packages:
+    name: Docker image to Github Packages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_NAME: ${{ github.repository }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{raw}}
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
+            type=ref,event=branch
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ${{ inputs.dockerfile-path }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: version=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SOURCE_VERSION }}
+
+  docker-hub:
+    name: Docker image to Docker Hub
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: docker.io
+      IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.dockerhub-image-name }}
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{raw}}
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
+            type=ref,event=branch
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ${{ inputs.dockerfile-path }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: version=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SOURCE_VERSION }}
