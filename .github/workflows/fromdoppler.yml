@@ -1,0 +1,12 @@
+name: FromDoppler
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  conventional-commits:
+    name: Conventions
+    uses: ./.github/workflows/conventions.yml
