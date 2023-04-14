@@ -1,0 +1,15 @@
+name: Conventions
+
+on:
+  workflow_call:
+
+jobs:
+  conventional-commits:
+    name: Conventional Commits
+    runs-on: ubuntu-latest
+    steps:
+      - name: Conventional Commits Validator
+        uses: ahmadnassri/action-commit-lint@v1
+  code-format:
+    name: Code Format
+    uses: ./.github/workflows/code-format-verification.yml
