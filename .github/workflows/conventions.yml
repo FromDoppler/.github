@@ -12,4 +12,4 @@ jobs:
         uses: ahmadnassri/action-commit-lint@v1
   code-format:
     name: Code Format
-    uses: ./.github/workflows/code-format-verification.yml
+    uses: FromDoppler/.github/.github/workflows/code-format-verification.yml@main
