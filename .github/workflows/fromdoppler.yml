@@ -9,4 +9,4 @@ on:
 jobs:
   conventional-commits:
     name: Conventions
-    uses: ./.github/workflows/conventions.yml
+    uses: FromDoppler/.github/.github/workflows/conventions.yml@main
