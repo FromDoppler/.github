@@ -1,12 +1,12 @@
-# name: FromDoppler
+name: FromDoppler
 
-# on:
-#   push:
-#     branches: [main, master, develop]
-#   pull_request:
-#     branches: [main, master, develop]
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
 
-# jobs:
-#   conventional-commits:
-#     name: Conventions
-#     uses: FromDoppler/.github/.github/workflows/conventions.yml@main
+jobs:
+  conventional-commits:
+    name: Conventions
+    uses: FromDoppler/.github/.github/workflows/conventions.yml@main
