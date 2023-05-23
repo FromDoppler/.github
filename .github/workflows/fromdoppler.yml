@@ -2,9 +2,9 @@ name: FromDoppler
 
 on:
   push:
-    branches: [master, develop]
+    branches: [main, master, develop]
   pull_request:
-    branches: [master, develop]
+    branches: [main, master, develop]
 
 jobs:
   conventional-commits:
