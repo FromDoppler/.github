@@ -23,6 +23,8 @@ jobs:
       - name: Determine Version
         id: version # step id used as reference for output values
         uses: gittools/actions/gitversion/execute@v0.10.2
+      - name: Build with dotnet
+        run: dotnet build --configuration Release
       - name: Pack nuget
         run: |
           dotnet pack \
