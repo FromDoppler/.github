@@ -1,11 +1,11 @@
-name: .NET
+name: Continuous Integration
 
 on:
   workflow_call:
 
 jobs:
-  continuous-delivery:
-    name: Continuous Integration and Delivery
+  format-build-test:
+    name: .NET format, build and test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -23,35 +23,3 @@ jobs:
       - name: Test with dotnet
         run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage"
       - uses: codecov/codecov-action@v3.1.1
-
-      - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@v0.10.2
-        with:
-          versionSpec: "5.x"
-      - name: Determine Version
-        id: version # step id used as reference for output values
-        uses: gittools/actions/gitversion/execute@v0.10.2
-      - name: Pack nuget
-        run: |
-          dotnet pack \
-            --output ./nugets \
-            --configuration Release \
-            -p:Version=${{ steps.version.outputs.nuGetVersion }}
-      - name: Check if generates nugets packages
-        id: has-nugets
-        uses: andstor/file-existence-action@v1
-        with:
-          files: "./nugets/*.nupkg"
-      - name: Upload artifact
-        if: steps.has-nugets.outputs.files_exists == 'true'
-        uses: actions/upload-artifact@v3.1.2
-        with:
-          name: nugets
-          path: ./nugets/*.nupkg
-      - name: Delivery nuget to Github Packages
-        if: steps.has-nugets.outputs.files_exists == 'true'
-        run: |
-          dotnet nuget push ./nugets/*.nupkg \
-            --skip-duplicate \
-            --api-key ${{ secrets.GITHUB_TOKEN }} \
-            --source 'https://nuget.pkg.github.com/${{ github.REPOSITORY_OWNER }}/index.json'
