@@ -15,6 +15,10 @@ jobs:
   dotnet:
     name: .NET
     uses: FromDoppler/.github/.github/workflows/dotnet.yml@main
+  nuget:
+    if: ${{ github.event_name == 'push' }}
+    name: Nuget
+    uses: FromDoppler/.github/.github/workflows/continuous-delivery-nuget.yml@main
   docker:
     if: ${{ github.event_name == 'push' }}
     name: Docker
