@@ -13,15 +13,15 @@ jobs:
     name: Conventions
     uses: FromDoppler/.github/.github/workflows/conventions.yml@main
   dotnet:
-    name: .NET
+    name: Continuous Integration
     uses: FromDoppler/.github/.github/workflows/dotnet.yml@main
   nuget:
     if: ${{ github.event_name == 'push' }}
-    name: Nuget
+    name: Continuous Delivery
     uses: FromDoppler/.github/.github/workflows/continuous-delivery-nuget.yml@main
   docker:
     if: ${{ github.event_name == 'push' }}
-    name: Docker
+    name: Continuous Delivery
     uses: FromDoppler/.github/.github/workflows/continuous-delivery-dockerfile.yml@main
     secrets: inherit
     with:
@@ -29,6 +29,6 @@ jobs:
       dockerhub-image-name: "doppler-dockerhub-image-name-example"
   docker-compose:
     if: ${{ github.event_name == 'push' }}
-    name: Docker
+    name: Continuous Delivery
     uses: FromDoppler/.github/.github/workflows/continuous-delivery-docker-compose.yml@main
     secrets: inherit
