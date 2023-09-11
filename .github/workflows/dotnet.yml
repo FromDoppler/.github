@@ -22,4 +22,7 @@ jobs:
         run: dotnet build --configuration Release
       - name: Test with dotnet
         run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage"
-      - uses: codecov/codecov-action@v3.1.4
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3.1.4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
