@@ -14,6 +14,7 @@ on:
 
 env:
   SOURCE_VERSION: "${{ github.ref_name }}+${{ github.sha }}@${{ github.server_url}}/${{ github.repository }}"
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   github-packages:
