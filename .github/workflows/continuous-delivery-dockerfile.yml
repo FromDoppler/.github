@@ -57,7 +57,9 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: version=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SOURCE_VERSION }}
+          build-args: |
+            version=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SOURCE_VERSION }}
+            FROMDOPPLER_GITHUB_PACKAGES_TOKEN=${{ secrets.GITHUB_TOKEN }}
 
   docker-hub:
     name: Docker image to Docker Hub
@@ -94,4 +96,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: version=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SOURCE_VERSION }}
+          build-args: |
+            version=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SOURCE_VERSION }}
+            FROMDOPPLER_GITHUB_PACKAGES_TOKEN=${{ secrets.GITHUB_TOKEN }}
