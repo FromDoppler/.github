@@ -143,3 +143,14 @@ When we need a quick and easy way of authenticate a request, we can validate the
 
 We have a complete and flexible implementation of this token validation in .NET (for example in [Hello Microservice](https://github.com/FromDoppler/hello-microservice/pull/12)),
 but it can be easily re-implemented with other frameworks and languages.
+
+### FromDoppler GitHub Packages
+
+To use our generated artifacts, follow the next steps
+
+- Generate a [GitHub personal access token](https://github.com/settings/tokens/new) with at least `read:packages` permission
+- Set and use the environment variable `FROMDOPPLER_GITHUB_PACKAGES_TOKEN` with the token generated
+
+### Configure FromDoppler GitHub Packages as NuGet source
+
+- Use or adapt the [`nuget.config`](https://github.com/FromDoppler/.github/blob/main/dotnet-examples/nuget.config) file example into the required repository
