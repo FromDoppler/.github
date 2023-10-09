@@ -14,6 +14,7 @@ on:
 
 env:
   SOURCE_VERSION: "${{ github.ref_name }}+${{ github.sha }}@${{ github.server_url}}/${{ github.repository }}"
+  FROMDOPPLER_GITHUB_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   github-packages:
@@ -56,7 +57,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          secrets: FROMDOPPLER_GITHUB_PACKAGES_TOKEN=${{ secrets.GITHUB_TOKEN }}
           build-args: version=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SOURCE_VERSION }}
 
   docker-hub:
@@ -94,5 +94,4 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          secrets: FROMDOPPLER_GITHUB_PACKAGES_TOKEN=${{ secrets.GITHUB_TOKEN }}
           build-args: version=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SOURCE_VERSION }}
