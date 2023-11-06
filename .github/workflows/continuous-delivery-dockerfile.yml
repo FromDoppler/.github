@@ -31,7 +31,7 @@ jobs:
       packages: write
     env:
       REGISTRY: ghcr.io
-      IMAGE_NAME: ${{ github.repository.owner }}/${{ inputs.docker-image-name }}
+      IMAGE_NAME: ${{ github.repository_owner }}/${{ inputs.docker-image-name }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
