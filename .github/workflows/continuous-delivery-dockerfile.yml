@@ -11,6 +11,10 @@ on:
         description: "The name of the image when delivery to DockerHub registry"
         required: true
         type: string
+      docker-image-name:
+        description: "The name of the docker image to delivery"
+        default: ${{ inputs.dockerhub-image-name }}
+        type: string
 
 env:
   SOURCE_VERSION: "${{ github.ref_name }}+${{ github.sha }}@${{ github.server_url}}/${{ github.repository }}"
@@ -25,7 +29,7 @@ jobs:
       packages: write
     env:
       REGISTRY: ghcr.io
-      IMAGE_NAME: ${{ github.repository }}
+      IMAGE_NAME: ${{ github.repository.owner }}/${{ inputs.docker-image-name }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -66,7 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGISTRY: docker.io
-      IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.dockerhub-image-name }}
+      IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.docker-image-name }}
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
