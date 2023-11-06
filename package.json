@@ -6,7 +6,7 @@
     "@types/react": "18.2.36"
   },
   "devDependencies": {
-    "@cspell/dict-es-es": "2.2.7",
+    "@cspell/dict-es-es": "2.3.0",
     "cspell": "7.3.8",
     "eclint": "2.8.1",
     "markdownlint-cli2": "0.10.0",
