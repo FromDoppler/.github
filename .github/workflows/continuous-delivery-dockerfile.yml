@@ -7,15 +7,9 @@ on:
         description: "Path to Dockerfile to use for build image"
         default: "Dockerfile"
         type: string
-      # TODO remove dockerhub-image-name
-      dockerhub-image-name:
-        description: "The name of the image when delivery to DockerHub registry"
-        type: string
       docker-image-name:
         description: "The name of the docker image to delivery"
-        default: ${{ inputs.dockerhub-image-name }}
-        # TODO: uncomment the next line when remove dockerhub-image-name input
-        # required: true
+        required: true
         type: string
 
 env:

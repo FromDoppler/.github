@@ -21,14 +21,17 @@ jobs:
     uses: FromDoppler/.github/.github/workflows/continuous-delivery-nuget.yml@main
   docker:
     if: ${{ github.event_name == 'push' }}
-    name: Continuous Delivery
+    name: Continuous Delivery Default Project
     uses: FromDoppler/.github/.github/workflows/continuous-delivery-dockerfile.yml@main
     secrets: inherit
     with:
-      dockerfile-path: "Dockerfile"
-      dockerhub-image-name: "doppler-dockerhub-image-name-example"
-  docker-compose:
+      dockerfile-path: "DefaultProject/Dockerfile"
+      docker-image-name: "doppler-docker-image-name-default-example"
+  docker-another:
     if: ${{ github.event_name == 'push' }}
-    name: Continuous Delivery
-    uses: FromDoppler/.github/.github/workflows/continuous-delivery-docker-compose.yml@main
+    name: Continuous Delivery Another Project
+    uses: FromDoppler/.github/.github/workflows/continuous-delivery-dockerfile.yml@main
     secrets: inherit
+    with:
+      dockerfile-path: "AnotherProject/Dockerfile"
+      docker-image-name: "doppler-docker-image-name-another-example"
