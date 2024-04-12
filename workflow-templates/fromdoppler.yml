@@ -12,13 +12,16 @@ jobs:
   fromdoppler:
     name: Conventions
     uses: FromDoppler/.github/.github/workflows/conventions.yml@main
+    secrets: inherit
   dotnet:
     name: Continuous Integration
     uses: FromDoppler/.github/.github/workflows/dotnet.yml@main
+    secrets: inherit
   nuget:
     if: ${{ github.event_name == 'push' }}
     name: Continuous Delivery
     uses: FromDoppler/.github/.github/workflows/continuous-delivery-nuget.yml@main
+    secrets: inherit
   docker:
     if: ${{ github.event_name == 'push' }}
     name: Continuous Delivery Default Project
