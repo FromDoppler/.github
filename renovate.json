@@ -1,34 +1,17 @@
 {
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "dependencyDashboard": true,
   "extends": [
-    "config:base",
+    "config:recommended",
     ":semanticCommits",
     ":combinePatchMinorReleases",
-    ":enableVulnerabilityAlerts",
-    ":automergeLinters",
-    ":automergeTesters",
-    ":automergeTypes",
-    ":prConcurrentLimitNone",
-    ":prConcurrentLimit20",
-    "group:dotNetCore"
+    ":enableVulnerabilityAlerts"
   ],
   "packageRules": [
     {
-      "packageRules": [
-        {
-          "matchDepTypes": ["devDependencies"],
-          "automerge": true
-        }
-      ]
-    },
-    {
-      "packagePatterns": [
-        "Microsoft\\.VisualStudio\\.Azure\\.Containers\\.Tools\\.Targets",
-        "Microsoft\\.AspNetCore\\.Mvc\\.Testing",
-        "Moq",
-        "Microsoft\\.NET\\.Test\\.Sdk",
-        "xunit",
-        "coverlet\\.collector"
-      ],
+      "description": "Automerge non-major updates",
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchCurrentVersion": "!/^0/",
       "automerge": true
     }
   ]
