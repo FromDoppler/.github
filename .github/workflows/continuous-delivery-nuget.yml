@@ -33,7 +33,7 @@ jobs:
             -p:Version=${{ steps.version.outputs.nuGetVersion }}
       - name: Check if generates nugets packages
         id: has-nugets
-        uses: andstor/file-existence-action@v2
+        uses: andstor/file-existence-action@v3
         with:
           files: "./nugets/*.nupkg"
       - name: Upload artifact
