@@ -17,12 +17,12 @@ jobs:
         with:
           global-json-file: "global.json"
       - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@v0.13.6
+        uses: gittools/actions/gitversion/setup@v1.1.1
         with:
           versionSpec: "5.x"
       - name: Determine Version
         id: version # step id used as reference for output values
-        uses: gittools/actions/gitversion/execute@v0.13.6
+        uses: gittools/actions/gitversion/execute@v1.1.1
       - name: Build with dotnet
         run: dotnet build --configuration Release
       - name: Pack nuget
