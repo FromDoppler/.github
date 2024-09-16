@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "resolutions": {
-    "@types/react": "18.3.5"
+    "@types/react": "18.3.6"
   },
   "devDependencies": {
     "@cspell/dict-es-es": "3.0.0",
