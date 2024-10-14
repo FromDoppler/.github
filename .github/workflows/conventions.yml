@@ -16,7 +16,8 @@ jobs:
       - name: Install gitlint
         shell: bash
         run: |
-          python -m pip install gitlint
+          apt install pipx
+          pipx install gitlint
       - name: Run gitlint
         shell: bash
         run: |
