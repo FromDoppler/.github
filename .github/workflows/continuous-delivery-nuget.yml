@@ -38,7 +38,7 @@ jobs:
           files: "./nugets/*.nupkg"
       - name: Upload artifact
         if: steps.has-nugets.outputs.files_exists == 'true'
-        uses: actions/upload-artifact@v4.4.3
+        uses: actions/upload-artifact@v4.5.0
         with:
           name: nugets
           path: ./nugets/*.nupkg
