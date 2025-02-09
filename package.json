@@ -10,7 +10,7 @@
     "cspell": "8.17.3",
     "eclint": "2.8.1",
     "markdownlint-cli2": "0.13.0",
-    "prettier": "3.4.2"
+    "prettier": "3.5.0"
   },
   "scripts": {
     "verify-format": "yarn prettier-check && yarn eclint-check",
