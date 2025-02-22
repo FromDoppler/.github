@@ -7,7 +7,7 @@
   },
   "devDependencies": {
     "@cspell/dict-es-es": "3.0.3",
-    "cspell": "8.17.4",
+    "cspell": "8.17.5",
     "eclint": "2.8.1",
     "markdownlint-cli2": "0.13.0",
     "prettier": "3.5.2"
