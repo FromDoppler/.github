@@ -9,7 +9,7 @@
     "@cspell/dict-es-es": "3.0.3",
     "cspell": "8.18.1",
     "eclint": "2.8.1",
-    "markdownlint-cli2": "0.13.0",
+    "markdownlint-cli2": "0.17.2",
     "prettier": "3.5.3"
   },
   "scripts": {
