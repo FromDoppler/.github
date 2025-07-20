@@ -187,10 +187,10 @@
   resolved "https://registry.yarnpkg.com/@cspell/dict-en_us/-/dict-en_us-4.4.3.tgz#6968286241f9d5e2e55bda3e6826e35139d5d0ef"
   integrity sha512-KnsS19kL5lYEk2P9xGNwvZF5ZbDYv1Tkv4BKIx4n4jKlgUj9iHv7L0Q+2cCvllKDGjuP715G/3Rg0McKdHR1Xg==
 
-"@cspell/dict-es-es@3.0.6":
-  version "3.0.6"
-  resolved "https://registry.yarnpkg.com/@cspell/dict-es-es/-/dict-es-es-3.0.6.tgz#c30a5b94a5b483b181d0d73d6488e5c5c94948d7"
-  integrity sha512-92SfrrL/CwdA8RIHHYPUKoD0+ocbNZVGc85PMEiZF4WmeaYVdDFr6FDVPycLjqDlOrZTat7NYx0xbZBuSzSMZw==
+"@cspell/dict-es-es@3.0.7":
+  version "3.0.7"
+  resolved "https://registry.yarnpkg.com/@cspell/dict-es-es/-/dict-es-es-3.0.7.tgz#7dcd0d9a4d566db122d6dd80b05eab39c523eda8"
+  integrity sha512-clYZYu36781+I58Lzpf52Rp9LFW8ihJqyS405nfbTI1I/fktwQ0OiNWcGJ2eq3mg2xKM7mVN3JYI0p1BBN7NfQ==
 
 "@cspell/dict-filetypes@^3.0.11":
   version "3.0.11"
