@@ -1,10 +1,13 @@
 name: FromDoppler
 
 on:
+  workflow_dispatch:
   push:
     branches: [main, master, develop]
   pull_request:
     branches: [main, master, develop]
+
+if: github.event_name != 'pull_request' || github.event.pull_request.user.login != 'renovate'
 
 jobs:
   conventional-commits:
