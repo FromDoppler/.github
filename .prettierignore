@@ -26,3 +26,4 @@ doppler-jenkins-ci.groovy
 *.env
 *.env.*
 *.md
+*.config
