@@ -9,6 +9,6 @@ on:
 
 jobs:
   conventional-commits:
-    if: github.event_name != 'pull_request' || github.event.pull_request.user.login != 'renovate'
+    if: github.actor != 'renovate'
     name: Conventions
     uses: FromDoppler/.github/.github/workflows/conventions.yml@main
