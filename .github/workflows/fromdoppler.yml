@@ -9,6 +9,9 @@ on:
 
 jobs:
   conventional-commits:
-    if: github.actor != 'renovate'
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' && !startsWith(github.head_ref, 'renovate/'))
     name: Conventions
     uses: FromDoppler/.github/.github/workflows/conventions.yml@main
