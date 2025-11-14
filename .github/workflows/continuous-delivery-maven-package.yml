@@ -1,0 +1,41 @@
+name: Maven Build and Publish
+# This workflow expects to be called from repositories that build Maven packages.
+# It sets up Java, builds the project using Maven, and publishes the package to GitHub Packages.
+# The proyect should have a valid pom.xml configured for publishing to GitHub Packages.
+# See https://github.com/FromDoppler/doppler-conversations-base-lib/blob/6c93a2eec20bcf6fe5a28f64ac9f6840de676641/pom.xml#L24-L30 for an example.
+on:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
+
+      - name: Configure timezone
+        run: |
+          sudo timedatectl set-timezone America/Argentina/Jujuy
+
+      - name: Build and deploy
+        env:
+          MAVEN_USER_HOME: ${{ github.workspace }}/.maven
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x mvnw
+          ./mvnw -ntp clean deploy -Dmaven.repo.local="$MAVEN_USER_HOME"
