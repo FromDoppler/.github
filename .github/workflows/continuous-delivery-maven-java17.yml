@@ -121,14 +121,22 @@ jobs:
 
             echo "Resolviendo paquete ${package_name}"
             local version_id
-            version_id=$(gh api "/orgs/${GH_PACKAGES_OWNER}/packages/generic/${package_name}/versions?per_page=1" --jq '.[0].id')
+            version_id=$(
+              gh api \
+                "/orgs/${GH_PACKAGES_OWNER}/packages/generic/${package_name}/versions?per_page=1" \
+                --jq '.[0].id'
+            )
             if [[ -z "${version_id}" ]]; then
               echo "No se encontró la versión del paquete ${package_name}" >&2
               exit 1
             fi
 
             local file_info
-            file_info=$(gh api "/orgs/${GH_PACKAGES_OWNER}/packages/generic/${package_name}/versions/${version_id}/files" --jq '.[0]')
+            file_info=$(
+              gh api \
+                "/orgs/${GH_PACKAGES_OWNER}/packages/generic/${package_name}/versions/${version_id}/files" \
+                --jq '.[0]'
+            )
             local download_url
             download_url=$(jq -r '.download_url' <<<"${file_info}")
             local file_name
@@ -141,7 +149,12 @@ jobs:
 
             mkdir -p external-libs
             echo "Descargando ${label} (${file_name})"
-            gh api --method GET -H "Accept: application/octet-stream" "${download_url}" > "external-libs/${file_name}"
+            local output_path="external-libs/${file_name}"
+            gh api \
+              --method GET \
+              -H "Accept: application/octet-stream" \
+              "${download_url}" \
+              > "${output_path}"
 
             case "${file_name}" in
               *.zip)
@@ -250,7 +263,10 @@ jobs:
           fi
           for service in ${SERVICE}; do
             echo "Actualizando ${service} en ${NAMESPACE_DEV}"
-            kubectl set image deploy/${service} ${service}=${REGISTRY_URL}/${IMAGE_NAME}:${REF_NAME}-${SHORT_SHA} --namespace ${NAMESPACE_DEV}
+            kubectl set image \
+              "deploy/${service}" \
+              "${service}=${REGISTRY_URL}/${IMAGE_NAME}:${REF_NAME}-${SHORT_SHA}" \
+              --namespace "${NAMESPACE_DEV}"
             kubectl rollout status deploy/${service} -n ${NAMESPACE_DEV}
           done
 
@@ -285,7 +301,10 @@ jobs:
           fi
           for service in ${SERVICE}; do
             echo "Actualizando ${service} en ${NAMESPACE_QA}"
-            kubectl set image deploy/${service} ${service}=${REGISTRY_URL}/${IMAGE_NAME}:${REF_NAME}-${SHORT_SHA} --namespace ${NAMESPACE_QA}
+            kubectl set image \
+              "deploy/${service}" \
+              "${service}=${REGISTRY_URL}/${IMAGE_NAME}:${REF_NAME}-${SHORT_SHA}" \
+              --namespace "${NAMESPACE_QA}"
             kubectl rollout status deploy/${service} -n ${NAMESPACE_QA}
           done
 
@@ -320,6 +339,9 @@ jobs:
           fi
           for service in ${SERVICE}; do
             echo "Actualizando ${service} en ${NAMESPACE_PROD}"
-            kubectl set image deploy/${service} ${service}=${REGISTRY_URL}/${IMAGE_NAME}:${REF_NAME}-${SHORT_SHA} --namespace ${NAMESPACE_PROD}
+            kubectl set image \
+              "deploy/${service}" \
+              "${service}=${REGISTRY_URL}/${IMAGE_NAME}:${REF_NAME}-${SHORT_SHA}" \
+              --namespace "${NAMESPACE_PROD}"
             kubectl rollout status deploy/${service} -n ${NAMESPACE_PROD}
           done
