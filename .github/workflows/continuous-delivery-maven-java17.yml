@@ -1,0 +1,325 @@
+name: Java 17 Service CI
+
+on:
+  workflow_call:
+    inputs:
+      dockerfile-path:
+        description: "Path to Dockerfile to use for build image"
+        default: "Dockerfile"
+        type: string
+      docker-image-name:
+        description: "The name of the docker image to delivery"
+        required: true
+        type: string
+      service-name:
+        description: "The name of the service to deploy"
+        required: true
+        type: string
+
+env:
+  TZ: America/Argentina/Jujuy
+  MAVEN_USER_HOME: ${{ github.workspace }}/.maven
+  REGISTRY_URL: 057343230848.dkr.ecr.us-east-1.amazonaws.com
+  QA_CLUSTER: beplic-qa-eks
+  PROD_CLUSTER: beplic-prod-eks
+  NAMESPACE_DEV: beplic-dev
+  NAMESPACE_QA: beplic-qa
+  NAMESPACE_PROD: beplic-prod
+  KAFKA_PACKAGE_NAME: doppler-conversations-generic-kafka-lib
+  BASE_PACKAGE_NAME: doppler-conversations-base-lib
+  API_GRAPH_PACKAGE_NAME: doppler-conversations-api-graph-sdk-lib
+  GH_PACKAGES_OWNER: FromDoppler
+  ECR_REGION: us-east-1
+  EKS_REGION: us-east-2
+  SOURCE_VERSION: "${{ github.ref_name }}+${{ github.sha }}@${{ github.server_url}}/${{ github.repository }}"
+  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.docker-image-name }}
+  SERVICE: ${{ inputs.service-name }}
+
+jobs:
+  # sonarqube:
+  #   if: github.ref == 'refs/heads/qa'
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: read
+  #   continue-on-error: true
+  #   env:
+  #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  #     SONAR_USER_HOME: ${{ runner.temp }}/.sonar
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
+
+  #     - name: Set up Java 17
+  #       uses: actions/setup-java@v4
+  #       with:
+  #         distribution: temurin
+  #         java-version: "17"
+  #         cache: maven
+
+  #     - name: Cache SonarQube files
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: ${{ env.SONAR_USER_HOME }}/cache
+  #         key: sonar-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+  #         restore-keys: |
+  #           sonar-${{ runner.os }}-
+
+  #     - name: Prepare Maven wrapper
+  #       run: chmod +x mvnw
+
+  #     - name: Run SonarQube analysis (tests skipped)
+  #       run: ./mvnw -ntp verify sonar:sonar -Dmaven.test.skip=true
+
+  maven-package:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Ensure Maven repository folder exists
+        run: mkdir -p "$MAVEN_USER_HOME"
+
+      - name: Cache custom Maven repository
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.MAVEN_USER_HOME }}
+          key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            maven-${{ runner.os }}-
+
+      - name: Prepare Maven wrapper
+        run: chmod +x mvnw
+
+      - name: Download shared GitHub packages
+        env:
+          GH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${GH_TOKEN:-}" ]]; then
+            echo "GH_PACKAGES_TOKEN secret is required to download external libraries." >&2
+            exit 1
+          fi
+
+          download_package() {
+            local package_name=$1
+            local label=$2
+
+            echo "Resolviendo paquete ${package_name}"
+            local version_id
+            version_id=$(gh api "/orgs/${GH_PACKAGES_OWNER}/packages/generic/${package_name}/versions?per_page=1" --jq '.[0].id')
+            if [[ -z "${version_id}" ]]; then
+              echo "No se encontró la versión del paquete ${package_name}" >&2
+              exit 1
+            fi
+
+            local file_info
+            file_info=$(gh api "/orgs/${GH_PACKAGES_OWNER}/packages/generic/${package_name}/versions/${version_id}/files" --jq '.[0]')
+            local download_url
+            download_url=$(jq -r '.download_url' <<<"${file_info}")
+            local file_name
+            file_name=$(jq -r '.name' <<<"${file_info}")
+
+            if [[ -z "${download_url}" || "${download_url}" == "null" ]]; then
+              echo "No se pudo resolver la URL de descarga para ${package_name}" >&2
+              exit 1
+            fi
+
+            mkdir -p external-libs
+            echo "Descargando ${label} (${file_name})"
+            gh api --method GET -H "Accept: application/octet-stream" "${download_url}" > "external-libs/${file_name}"
+
+            case "${file_name}" in
+              *.zip)
+                unzip -o "external-libs/${file_name}" -d .
+                ;;
+              *.tar|*.tar.gz|*.tgz)
+                tar -xf "external-libs/${file_name}" -C .
+                ;;
+              *)
+                cp "external-libs/${file_name}" "${MAVEN_USER_HOME}/"
+                ;;
+            esac
+          }
+
+          download_package "${KAFKA_PACKAGE_NAME}" "POC Generic Kafka"
+          download_package "${BASE_PACKAGE_NAME}" "Beplic Base"
+          download_package "${API_GRAPH_PACKAGE_NAME}" "Beplic API Graph SDK"
+
+      - name: Build and deploy
+        uses: actions/upload-artifact@v4
+        with:
+          name: maven-package
+          path: |
+            target/*.jar
+            target/classes
+            target/generated-sources
+          retention-days: 1
+
+  docker-hub:
+    name: Docker image to Docker Hub
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: docker.io
+      IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.docker-image-name }}
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Download package artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: maven-package
+          path: .
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{raw}}
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
+            type=ref,event=branch
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ inputs.dockerfile-path }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            version=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SOURCE_VERSION }}
+            FROMDOPPLER_GITHUB_PACKAGES_TOKEN=${{ secrets.GITHUB_TOKEN }}
+
+  deploy-dev:
+    runs-on: ubuntu-latest
+    needs:
+      - docker-hub
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: dev
+      url: http
+    steps:
+      - name: Configure kubeconfig
+        shell: bash
+        env:
+          DEV_KUBECONFIG: ${{ secrets.KUBECONFIG_DEV }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${DEV_KUBECONFIG:-}" ]]; then
+            echo "Se requiere el secreto KUBECONFIG_DEV para desplegar en dev." >&2
+            exit 1
+          fi
+          mkdir -p ~/.kube
+          printf '%s' "${DEV_KUBECONFIG}" | base64 --decode > ~/.kube/config
+
+      - name: Rollout to dev cluster
+        env:
+          REF_NAME: ${{ needs.docker-push.outputs.branch_name }}
+          SHORT_SHA: ${{ needs.docker-push.outputs.short_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${SERVICE}" ]]; then
+            echo "La variable SERVICE es obligatoria." >&2
+            exit 1
+          fi
+          for service in ${SERVICE}; do
+            echo "Actualizando ${service} en ${NAMESPACE_DEV}"
+            kubectl set image deploy/${service} ${service}=${REGISTRY_URL}/${IMAGE_NAME}:${REF_NAME}-${SHORT_SHA} --namespace ${NAMESPACE_DEV}
+            kubectl rollout status deploy/${service} -n ${NAMESPACE_DEV}
+          done
+
+  deploy-qa:
+    runs-on: ubuntu-latest
+    needs:
+      - docker-hub
+    if: github.ref == 'refs/heads/qa'
+    environment:
+      name: qa
+    steps:
+      - name: Configure AWS credentials (QA)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_K8S_QA }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_K8S_QA }}
+          aws-region: ${{ env.EKS_REGION }}
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name ${QA_CLUSTER} --region ${EKS_REGION} --alias qa
+
+      - name: Rollout to QA cluster
+        env:
+          REF_NAME: ${{ needs.docker-push.outputs.branch_name }}
+          SHORT_SHA: ${{ needs.docker-push.outputs.short_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${SERVICE}" ]]; then
+            echo "La variable SERVICE es obligatoria." >&2
+            exit 1
+          fi
+          for service in ${SERVICE}; do
+            echo "Actualizando ${service} en ${NAMESPACE_QA}"
+            kubectl set image deploy/${service} ${service}=${REGISTRY_URL}/${IMAGE_NAME}:${REF_NAME}-${SHORT_SHA} --namespace ${NAMESPACE_QA}
+            kubectl rollout status deploy/${service} -n ${NAMESPACE_QA}
+          done
+
+  deploy-prod:
+    runs-on: ubuntu-latest
+    needs:
+      - docker-hub
+    if: github.ref == 'refs/heads/master'
+    environment:
+      name: prod
+    steps:
+      - name: Configure AWS credentials (prod)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_K8S_PROD }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_K8S_PROD }}
+          aws-region: ${{ env.EKS_REGION }}
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name ${PROD_CLUSTER} --region ${EKS_REGION} --alias prod
+
+      - name: Rollout to prod cluster
+        env:
+          REF_NAME: ${{ needs.docker-push.outputs.branch_name }}
+          SHORT_SHA: ${{ needs.docker-push.outputs.short_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${SERVICE}" ]]; then
+            echo "La variable SERVICE es obligatoria." >&2
+            exit 1
+          fi
+          for service in ${SERVICE}; do
+            echo "Actualizando ${service} en ${NAMESPACE_PROD}"
+            kubectl set image deploy/${service} ${service}=${REGISTRY_URL}/${IMAGE_NAME}:${REF_NAME}-${SHORT_SHA} --namespace ${NAMESPACE_PROD}
+            kubectl rollout status deploy/${service} -n ${NAMESPACE_PROD}
+          done
