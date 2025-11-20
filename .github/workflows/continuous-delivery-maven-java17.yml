@@ -196,6 +196,25 @@ jobs:
             cp -R maven-package/* .
             shopt -u dotglob
           fi
+      - name: Ensure jar in target for Docker build
+        shell: bash
+        run: |
+          set -euo pipefail
+          jar_path=$(
+            find . \
+              \( -path "./target/*.jar" -o -path "./maven-package/target/*.jar" -o -path "./*.jar" -o -path "./maven-package/*.jar" \) \
+              ! -name "*.original" \
+              ! -name "maven-wrapper.jar" \
+              | head -n1
+          )
+          if [[ -z "${jar_path}" ]]; then
+            echo "No JAR found in downloaded artifacts." >&2
+            find . -maxdepth 3 -type f -name "*.jar" >&2 || true
+            exit 1
+          fi
+          mkdir -p target
+          cp "${jar_path}" "target/$(basename "${jar_path}")"
+          echo "Jar prepared at target/$(basename "${jar_path}")"
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
