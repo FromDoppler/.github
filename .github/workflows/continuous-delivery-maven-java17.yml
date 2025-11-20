@@ -154,6 +154,11 @@ jobs:
           download_package "${BASE_REPO_NAME}" "Beplic Base"
           download_package "${API_GRAPH_REPO_NAME}" "Beplic API Graph SDK"
 
+      - name: Build with Maven
+        run: |
+          ./mvnw -ntp compile -Dmaven.repo.local=$MAVEN_USER_HOME -DskipTests
+          ./mvnw -ntp verify -Pdev -DskipTests -Dmaven.repo.local=$MAVEN_USER_HOME
+
       - name: Build and deploy
         uses: actions/upload-artifact@v4
         with:
@@ -162,6 +167,7 @@ jobs:
             target/*.jar
             target/classes
             target/generated-sources
+          if-no-files-found: error
           retention-days: 1
 
   docker-hub:
