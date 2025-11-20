@@ -6,6 +6,10 @@ name: Maven Build and Publish
 on:
   workflow_call:
 
+env:
+  TZ: America/Argentina/Jujuy
+  MAVEN_USER_HOME: ${{ github.workspace }}/.maven
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -13,6 +17,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Checkout repository
@@ -32,10 +38,60 @@ jobs:
         run: |
           sudo timedatectl set-timezone America/Argentina/Jujuy
 
-      - name: Build and deploy
+      - name: Ensure Maven repository folder exists
+        run: mkdir -p "$MAVEN_USER_HOME"
+
+      - name: Build jar and populate local repo
         env:
-          MAVEN_USER_HOME: ${{ github.workspace }}/.maven
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           chmod +x mvnw
-          ./mvnw -ntp clean deploy -Dmaven.repo.local="$MAVEN_USER_HOME"
+          ./mvnw -ntp clean install -Dmaven.repo.local=$MAVEN_USER_HOME --batch-mode
+
+      - name: Bundle offline Maven repo
+        run: |
+          mkdir -p dist
+          zip -r dist/library-maven-repo.zip "$MAVEN_USER_HOME"
+
+      - name: Upload jar artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: library-jar
+          path: "**/target/*.jar"
+          if-no-files-found: error
+
+      - name: Upload Maven repo bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: library-maven-repo
+          path: dist/library-maven-repo.zip
+          if-no-files-found: error
+  release:
+    name: Publish release asset
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download jar artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: library-jar
+          path: dist
+
+      - name: Download Maven repo bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: library-maven-repo
+          path: dist
+
+      - name: Create GitHub Release and attach jar
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          files: |
+            dist/**/*.jar
+            dist/**/*.zip
