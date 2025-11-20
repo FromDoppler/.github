@@ -174,7 +174,7 @@ jobs:
           download_package "${API_GRAPH_PACKAGE_NAME}" "Beplic API Graph SDK"
 
       - name: Build and deploy
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: maven-package
           path: |
@@ -194,7 +194,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download package artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: maven-package
           path: .
