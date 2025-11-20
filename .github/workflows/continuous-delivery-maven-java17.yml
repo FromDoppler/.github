@@ -187,6 +187,15 @@ jobs:
         with:
           name: maven-package
           path: .
+      - name: Flatten downloaded artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -d "maven-package" ]]; then
+            shopt -s dotglob
+            cp -R maven-package/* .
+            shopt -u dotglob
+          fi
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
