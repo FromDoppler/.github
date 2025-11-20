@@ -25,10 +25,11 @@ env:
   NAMESPACE_DEV: beplic-dev
   NAMESPACE_QA: beplic-qa
   NAMESPACE_PROD: beplic-prod
-  KAFKA_PACKAGE_NAME: doppler-conversations-generic-kafka-lib
-  BASE_PACKAGE_NAME: doppler-conversations-base-lib
-  API_GRAPH_PACKAGE_NAME: doppler-conversations-api-graph-sdk-lib
-  GH_PACKAGES_OWNER: FromDoppler
+  KAFKA_REPO_NAME: doppler-conversations-generic-kafka-lib
+  BASE_REPO_NAME: doppler-conversations-base-lib
+  API_GRAPH_REPO_NAME: doppler-conversations-api-graph-sdk-lib
+  GH_OWNER: FromDoppler
+  PACKAGES_RELEASE_TAG: v1.0.0
   ECR_REGION: us-east-1
   EKS_REGION: us-east-2
   SOURCE_VERSION: "${{ github.ref_name }}+${{ github.sha }}@${{ github.server_url}}/${{ github.repository }}"
@@ -114,64 +115,49 @@ jobs:
             echo "GH_PACKAGES_TOKEN secret is required to download external libraries." >&2
             exit 1
           fi
+          if [[ -z "${PACKAGES_RELEASE_TAG:-}" ]]; then
+            echo "PACKAGES_RELEASE_TAG env var is required to download release assets." >&2
+            exit 1
+          fi
 
           download_package() {
-            local package_name=$1
+            local repo_name=$1
             local label=$2
+            local repo="${GH_OWNER}/${repo_name}"
+            local target_dir="external-libs/${repo_name}"
 
-            echo "Resolviendo paquete ${package_name}"
-            local version_id
-            version_id=$(
-              gh api \
-                "/orgs/${GH_PACKAGES_OWNER}/packages/generic/${package_name}/versions?per_page=1" \
-                --jq '.[0].id'
-            )
-            if [[ -z "${version_id}" ]]; then
-              echo "No se encontró la versión del paquete ${package_name}" >&2
+            echo "Descargando release ${PACKAGES_RELEASE_TAG} de ${repo} (${label})"
+            mkdir -p "${target_dir}"
+            if ! gh release download \
+              "${PACKAGES_RELEASE_TAG}" \
+              --repo "${repo}" \
+              --pattern '*.zip' \
+              --pattern '*.jar' \
+              --dir "${target_dir}"; then
+              echo "No se pudo descargar assets de release para ${repo}" >&2
               exit 1
             fi
 
-            local file_info
-            file_info=$(
-              gh api \
-                "/orgs/${GH_PACKAGES_OWNER}/packages/generic/${package_name}/versions/${version_id}/files" \
-                --jq '.[0]'
-            )
-            local download_url
-            download_url=$(jq -r '.download_url' <<<"${file_info}")
-            local file_name
-            file_name=$(jq -r '.name' <<<"${file_info}")
-
-            if [[ -z "${download_url}" || "${download_url}" == "null" ]]; then
-              echo "No se pudo resolver la URL de descarga para ${package_name}" >&2
-              exit 1
-            fi
-
-            mkdir -p external-libs
-            echo "Descargando ${label} (${file_name})"
-            local output_path="external-libs/${file_name}"
-            gh api \
-              --method GET \
-              -H "Accept: application/octet-stream" \
-              "${download_url}" \
-              > "${output_path}"
-
-            case "${file_name}" in
-              *.zip)
-                unzip -o "external-libs/${file_name}" -d .
-                ;;
-              *.tar|*.tar.gz|*.tgz)
-                tar -xf "external-libs/${file_name}" -C .
-                ;;
-              *)
-                cp "external-libs/${file_name}" "${MAVEN_USER_HOME}/"
-                ;;
-            esac
+            shopt -s nullglob
+            for file in "${target_dir}"/*.zip; do
+              echo "Descomprimiendo ${file}"
+              unzip -o "${file}" -d .
+            done
+            for file in "${target_dir}"/*.jar; do
+              echo "Copiando ${file} a ${MAVEN_USER_HOME}"
+              cp "${file}" "${MAVEN_USER_HOME}/"
+            done
+            shopt -u nullglob
           }
 
-          download_package "${KAFKA_PACKAGE_NAME}" "POC Generic Kafka"
-          download_package "${BASE_PACKAGE_NAME}" "Beplic Base"
-          download_package "${API_GRAPH_PACKAGE_NAME}" "Beplic API Graph SDK"
+          download_package "${KAFKA_REPO_NAME}" "POC Generic Kafka"
+          download_package "${BASE_REPO_NAME}" "Beplic Base"
+          download_package "${API_GRAPH_REPO_NAME}" "Beplic API Graph SDK"
+
+      - name: Build with Maven
+        run: |
+          ./mvnw -ntp compile -Dmaven.repo.local=$MAVEN_USER_HOME -DskipTests
+          ./mvnw -ntp verify -Pdev -DskipTests -Dmaven.repo.local=$MAVEN_USER_HOME
 
       - name: Build and deploy
         uses: actions/upload-artifact@v4
@@ -181,11 +167,14 @@ jobs:
             target/*.jar
             target/classes
             target/generated-sources
+          if-no-files-found: error
           retention-days: 1
 
   docker-hub:
     name: Docker image to Docker Hub
     runs-on: ubuntu-latest
+    needs:
+      - maven-package
     env:
       REGISTRY: docker.io
       IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.docker-image-name }}
@@ -198,6 +187,37 @@ jobs:
         with:
           name: maven-package
           path: .
+      - name: Flatten downloaded artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -d "maven-package" ]]; then
+            shopt -s dotglob
+            cp -R maven-package/* .
+            shopt -u dotglob
+          fi
+      - name: Ensure jar in target for Docker build
+        shell: bash
+        run: |
+          set -euo pipefail
+          jar_path=$(
+            find . \
+              \( -path "./target/*.jar" \
+                -o -path "./maven-package/target/*.jar" \
+                -o -path "./*.jar" \
+                -o -path "./maven-package/*.jar" \) \
+              ! -name "*.original" \
+              ! -name "maven-wrapper.jar" \
+              | head -n1
+          )
+          if [[ -z "${jar_path}" ]]; then
+            echo "No JAR found in downloaded artifacts." >&2
+            find . -maxdepth 3 -type f -name "*.jar" >&2 || true
+            exit 1
+          fi
+          mkdir -p target
+          cp "${jar_path}" "target/$(basename "${jar_path}")"
+          echo "Jar prepared at target/$(basename "${jar_path}")"
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
