@@ -129,8 +129,8 @@ jobs:
             echo "Descargando release ${PACKAGES_RELEASE_TAG} de ${repo} (${label})"
             mkdir -p "${target_dir}"
             if ! gh release download \
+              "${PACKAGES_RELEASE_TAG}" \
               --repo "${repo}" \
-              --tag "${PACKAGES_RELEASE_TAG}" \
               --pattern '*.zip' \
               --pattern '*.jar' \
               --dir "${target_dir}"; then
@@ -167,6 +167,8 @@ jobs:
   docker-hub:
     name: Docker image to Docker Hub
     runs-on: ubuntu-latest
+    needs:
+      - maven-package
     env:
       REGISTRY: docker.io
       IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.docker-image-name }}
