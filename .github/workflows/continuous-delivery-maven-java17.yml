@@ -202,7 +202,10 @@ jobs:
           set -euo pipefail
           jar_path=$(
             find . \
-              \( -path "./target/*.jar" -o -path "./maven-package/target/*.jar" -o -path "./*.jar" -o -path "./maven-package/*.jar" \) \
+              \( -path "./target/*.jar" \
+                -o -path "./maven-package/target/*.jar" \
+                -o -path "./*.jar" \
+                -o -path "./maven-package/*.jar" \) \
               ! -name "*.original" \
               ! -name "maven-wrapper.jar" \
               | head -n1
