@@ -251,6 +251,9 @@ jobs:
     environment:
       name: qa
     steps:
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+
       - name: Save DigitalOcean kubeconfig with short-lived credentials
         run: |
           doctl kubernetes cluster kubeconfig save \
@@ -281,6 +284,9 @@ jobs:
     environment:
       name: prod
     steps:
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+
       - name: Save DigitalOcean kubeconfig with short-lived credentials
         run: |
           doctl kubernetes cluster kubeconfig save \
