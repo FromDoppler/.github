@@ -252,7 +252,9 @@ jobs:
       name: qa
     steps:
       - name: Save DigitalOcean kubeconfig with short-lived credentials
-        run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 ${{ secrets.CLUSTER_NAME }}
+        run: |
+          doctl kubernetes cluster kubeconfig save \
+          --expiry-seconds 600 ${{ secrets.CONVERSATIONS_CLUSTER_NAME }}
 
       - name: Rollout to QA cluster
         shell: bash
@@ -280,7 +282,9 @@ jobs:
       name: prod
     steps:
       - name: Save DigitalOcean kubeconfig with short-lived credentials
-        run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 ${{ secrets.CLUSTER_NAME }}
+        run: |
+          doctl kubernetes cluster kubeconfig save \
+          --expiry-seconds 600 ${{ secrets.CONVERSATIONS_CLUSTER_NAME }}
 
       - name: Rollout to prod cluster
         shell: bash
