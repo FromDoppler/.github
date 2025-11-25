@@ -19,10 +19,6 @@ on:
 env:
   TZ: America/Argentina/Jujuy
   MAVEN_USER_HOME: ${{ github.workspace }}/.maven
-  REGISTRY_URL: 057343230848.dkr.ecr.us-east-1.amazonaws.com
-  QA_CLUSTER: beplic-qa-eks
-  PROD_CLUSTER: beplic-prod-eks
-  NAMESPACE_DEV: beplic-dev
   NAMESPACE_QA: beplic-qa
   NAMESPACE_PROD: beplic-prod
   KAFKA_REPO_NAME: doppler-conversations-generic-kafka-lib
@@ -30,11 +26,10 @@ env:
   API_GRAPH_REPO_NAME: doppler-conversations-api-graph-sdk-lib
   GH_OWNER: FromDoppler
   PACKAGES_RELEASE_TAG: v1.0.0
-  ECR_REGION: us-east-1
-  EKS_REGION: us-east-2
   SOURCE_VERSION: "${{ github.ref_name }}+${{ github.sha }}@${{ github.server_url}}/${{ github.repository }}"
   IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.docker-image-name }}
   SERVICE: ${{ inputs.service-name }}
+  DEPLOY_REF: ${{ github.ref_type == 'tag' && github.ref_name || github.head_ref || github.ref_name }}
 
 jobs:
   # sonarqube:
@@ -248,70 +243,20 @@ jobs:
             version=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SOURCE_VERSION }}
             FROMDOPPLER_GITHUB_PACKAGES_TOKEN=${{ secrets.GITHUB_TOKEN }}
 
-  deploy-dev:
-    runs-on: ubuntu-latest
-    needs:
-      - docker-hub
-    if: github.ref == 'refs/heads/develop'
-    environment:
-      name: dev
-      url: http
-    steps:
-      - name: Configure kubeconfig
-        shell: bash
-        env:
-          DEV_KUBECONFIG: ${{ secrets.KUBECONFIG_DEV }}
-        run: |
-          set -euo pipefail
-          if [[ -z "${DEV_KUBECONFIG:-}" ]]; then
-            echo "Se requiere el secreto KUBECONFIG_DEV para desplegar en dev." >&2
-            exit 1
-          fi
-          mkdir -p ~/.kube
-          printf '%s' "${DEV_KUBECONFIG}" | base64 --decode > ~/.kube/config
-
-      - name: Rollout to dev cluster
-        env:
-          REF_NAME: ${{ needs.docker-push.outputs.branch_name }}
-          SHORT_SHA: ${{ needs.docker-push.outputs.short_sha }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ -z "${SERVICE}" ]]; then
-            echo "La variable SERVICE es obligatoria." >&2
-            exit 1
-          fi
-          for service in ${SERVICE}; do
-            echo "Actualizando ${service} en ${NAMESPACE_DEV}"
-            kubectl set image \
-              "deploy/${service}" \
-              "${service}=${REGISTRY_URL}/${IMAGE_NAME}:${REF_NAME}-${SHORT_SHA}" \
-              --namespace "${NAMESPACE_DEV}"
-            kubectl rollout status deploy/${service} -n ${NAMESPACE_DEV}
-          done
-
   deploy-qa:
     runs-on: ubuntu-latest
     needs:
       - docker-hub
-    if: github.ref == 'refs/heads/qa'
+    if: github.ref == 'refs/heads/main'
     environment:
       name: qa
     steps:
-      - name: Configure AWS credentials (QA)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_K8S_QA }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_K8S_QA }}
-          aws-region: ${{ env.EKS_REGION }}
-
-      - name: Update kubeconfig
-        run: aws eks update-kubeconfig --name ${QA_CLUSTER} --region ${EKS_REGION} --alias qa
+      - name: Save DigitalOcean kubeconfig with short-lived credentials
+        run: |
+          doctl kubernetes cluster kubeconfig save \
+          --expiry-seconds 600 ${{ secrets.CONVERSATIONS_CLUSTER_NAME }}
 
       - name: Rollout to QA cluster
-        env:
-          REF_NAME: ${{ needs.docker-push.outputs.branch_name }}
-          SHORT_SHA: ${{ needs.docker-push.outputs.short_sha }}
         shell: bash
         run: |
           set -euo pipefail
@@ -323,7 +268,7 @@ jobs:
             echo "Actualizando ${service} en ${NAMESPACE_QA}"
             kubectl set image \
               "deploy/${service}" \
-              "${service}=${REGISTRY_URL}/${IMAGE_NAME}:${REF_NAME}-${SHORT_SHA}" \
+              "${service}=${{ env.IMAGE_NAME }}:${{ github.ref_name }}" \
               --namespace "${NAMESPACE_QA}"
             kubectl rollout status deploy/${service} -n ${NAMESPACE_QA}
           done
@@ -332,24 +277,16 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - docker-hub
-    if: github.ref == 'refs/heads/master'
+    if: github.ref_type == 'tag'
     environment:
       name: prod
     steps:
-      - name: Configure AWS credentials (prod)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_K8S_PROD }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_K8S_PROD }}
-          aws-region: ${{ env.EKS_REGION }}
-
-      - name: Update kubeconfig
-        run: aws eks update-kubeconfig --name ${PROD_CLUSTER} --region ${EKS_REGION} --alias prod
+      - name: Save DigitalOcean kubeconfig with short-lived credentials
+        run: |
+          doctl kubernetes cluster kubeconfig save \
+          --expiry-seconds 600 ${{ secrets.CONVERSATIONS_CLUSTER_NAME }}
 
       - name: Rollout to prod cluster
-        env:
-          REF_NAME: ${{ needs.docker-push.outputs.branch_name }}
-          SHORT_SHA: ${{ needs.docker-push.outputs.short_sha }}
         shell: bash
         run: |
           set -euo pipefail
@@ -361,7 +298,7 @@ jobs:
             echo "Actualizando ${service} en ${NAMESPACE_PROD}"
             kubectl set image \
               "deploy/${service}" \
-              "${service}=${REGISTRY_URL}/${IMAGE_NAME}:${REF_NAME}-${SHORT_SHA}" \
+              "${service}=${{ env.IMAGE_NAME }}:${{ github.ref_name }}" \
               --namespace "${NAMESPACE_PROD}"
             kubectl rollout status deploy/${service} -n ${NAMESPACE_PROD}
           done
