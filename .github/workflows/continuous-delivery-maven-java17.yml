@@ -253,6 +253,8 @@ jobs:
     steps:
       - name: Install doctl
         uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
       - name: Save DigitalOcean kubeconfig with short-lived credentials
         run: |
@@ -286,6 +288,8 @@ jobs:
     steps:
       - name: Install doctl
         uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
       - name: Save DigitalOcean kubeconfig with short-lived credentials
         run: |
