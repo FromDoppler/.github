@@ -143,7 +143,20 @@ jobs:
             shopt -s nullglob
             for file in "${target_dir}"/*.zip; do
               echo "Descomprimiendo ${file}"
-              unzip -o "${file}" -d .
+              unzip_dir="${target_dir}/unzipped/$(basename "${file}" .zip)"
+              mkdir -p "${unzip_dir}"
+              unzip -o "${file}" -d "${unzip_dir}"
+
+              mapfile -t maven_dirs < <(find "${unzip_dir}" -type d \( -name ".maven" -o -name ".m2" \))
+              if (( ${#maven_dirs[@]} == 0 )); then
+                echo "No se encontró carpeta .maven/.m2 dentro de ${file};" >&2
+              else
+                for mdir in "${maven_dirs[@]}"; do
+                  echo "Sincronizando repo Maven desde ${mdir} hacia ${MAVEN_USER_HOME}"
+                  mkdir -p "${MAVEN_USER_HOME}"
+                  cp -R "${mdir}/." "${MAVEN_USER_HOME}/"
+                done
+              fi
             done
             for file in "${target_dir}"/*.jar; do
               echo "Copiando ${file} a ${MAVEN_USER_HOME}"
