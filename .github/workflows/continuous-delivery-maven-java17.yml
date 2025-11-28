@@ -15,6 +15,11 @@ on:
         description: "The name of the service to deploy"
         required: true
         type: string
+      include-redis-package:
+        description: "Download shared Redis package"
+        required: false
+        default: false
+        type: boolean
 
 env:
   TZ: America/Argentina/Jujuy
@@ -24,6 +29,7 @@ env:
   KAFKA_REPO_NAME: doppler-conversations-generic-kafka-lib
   BASE_REPO_NAME: doppler-conversations-base-lib
   API_GRAPH_REPO_NAME: doppler-conversations-api-graph-sdk-lib
+  REDIS_REPO_NAME: doppler-conversations-generic-redis-lib
   GH_OWNER: FromDoppler
   PACKAGES_RELEASE_TAG: v1.0.0
   SOURCE_VERSION: "${{ github.ref_name }}+${{ github.sha }}@${{ github.server_url}}/${{ github.repository }}"
@@ -103,6 +109,7 @@ jobs:
       - name: Download shared GitHub packages
         env:
           GH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
+          INCLUDE_REDIS_PACKAGE: ${{ inputs.include-redis-package }}
         shell: bash
         run: |
           set -euo pipefail
@@ -148,6 +155,11 @@ jobs:
           download_package "${KAFKA_REPO_NAME}" "POC Generic Kafka"
           download_package "${BASE_REPO_NAME}" "Beplic Base"
           download_package "${API_GRAPH_REPO_NAME}" "Beplic API Graph SDK"
+          if [[ "${INCLUDE_REDIS_PACKAGE}" == "true" ]]; then
+            download_package "${REDIS_REPO_NAME}" "Generic Redis"
+          else
+            echo "Redis package not requested; skipping"
+          fi
 
       - name: Build with Maven
         run: |
