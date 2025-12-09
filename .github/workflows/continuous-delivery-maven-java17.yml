@@ -27,11 +27,14 @@ env:
   NAMESPACE_QA: beplic-qa
   NAMESPACE_PROD: beplic-prod
   KAFKA_REPO_NAME: doppler-conversations-generic-kafka-lib
+  KAFKA_PACKAGES_RELEASE_TAG: v1.0.0
   BASE_REPO_NAME: doppler-conversations-base-lib
+  BASE_PACKAGES_RELEASE_TAG: v1.0.0
   API_GRAPH_REPO_NAME: doppler-conversations-api-graph-sdk-lib
+  API_GRAPH_PACKAGES_RELEASE_TAG: v1.0.0
   REDIS_REPO_NAME: doppler-conversations-generic-redis-lib
+  REDIS_PACKAGES_RELEASE_TAG: v1.0.1
   GH_OWNER: FromDoppler
-  PACKAGES_RELEASE_TAG: v1.0.0
   SOURCE_VERSION: "${{ github.ref_name }}+${{ github.sha }}@${{ github.server_url}}/${{ github.repository }}"
   IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.docker-image-name }}
   SERVICE: ${{ inputs.service-name }}
@@ -117,21 +120,18 @@ jobs:
             echo "GH_PACKAGES_TOKEN secret is required to download external libraries." >&2
             exit 1
           fi
-          if [[ -z "${PACKAGES_RELEASE_TAG:-}" ]]; then
-            echo "PACKAGES_RELEASE_TAG env var is required to download release assets." >&2
-            exit 1
-          fi
 
           download_package() {
             local repo_name=$1
             local label=$2
+            local release_tag=$3
             local repo="${GH_OWNER}/${repo_name}"
             local target_dir="external-libs/${repo_name}"
 
-            echo "Descargando release ${PACKAGES_RELEASE_TAG} de ${repo} (${label})"
+            echo "Descargando release ${release_tag} de ${repo} (${label})"
             mkdir -p "${target_dir}"
             if ! gh release download \
-              "${PACKAGES_RELEASE_TAG}" \
+              "${release_tag}" \
               --repo "${repo}" \
               --pattern '*.zip' \
               --pattern '*.jar' \
@@ -165,11 +165,11 @@ jobs:
             shopt -u nullglob
           }
 
-          download_package "${KAFKA_REPO_NAME}" "POC Generic Kafka"
-          download_package "${BASE_REPO_NAME}" "Beplic Base"
-          download_package "${API_GRAPH_REPO_NAME}" "Beplic API Graph SDK"
+          download_package "${KAFKA_REPO_NAME}" "POC Generic Kafka" "${KAFKA_PACKAGES_RELEASE_TAG}"
+          download_package "${BASE_REPO_NAME}" "Beplic Base" "${BASE_PACKAGES_RELEASE_TAG}"
+          download_package "${API_GRAPH_REPO_NAME}" "Beplic API Graph SDK" "${API_GRAPH_PACKAGES_RELEASE_TAG}"
           if [[ "${INCLUDE_REDIS_PACKAGE}" == "true" ]]; then
-            download_package "${REDIS_REPO_NAME}" "Generic Redis"
+            download_package "${REDIS_REPO_NAME}" "Generic Redis" "${REDIS_PACKAGES_RELEASE_TAG}"
           else
             echo "Redis package not requested; skipping"
           fi
