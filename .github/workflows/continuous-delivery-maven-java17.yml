@@ -27,7 +27,7 @@ env:
   NAMESPACE_QA: beplic-qa
   NAMESPACE_PROD: beplic-prod
   KAFKA_REPO_NAME: doppler-conversations-generic-kafka-lib
-  KAFKA_PACKAGES_RELEASE_TAG: v1.0.0
+  KAFKA_PACKAGES_RELEASE_TAG: v1.0.1
   BASE_REPO_NAME: doppler-conversations-base-lib
   BASE_PACKAGES_RELEASE_TAG: v1.0.0
   API_GRAPH_REPO_NAME: doppler-conversations-api-graph-sdk-lib
