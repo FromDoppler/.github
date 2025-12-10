@@ -20,6 +20,22 @@ on:
         required: false
         default: false
         type: boolean
+      kafka-packages-release-tag:
+        description: "Release tag for Kafka shared package"
+        default: "v1.0.0"
+        type: string
+      base-packages-release-tag:
+        description: "Release tag for Base shared package"
+        default: "v1.0.0"
+        type: string
+      api-graph-packages-release-tag:
+        description: "Release tag for API Graph SDK shared package"
+        default: "v1.0.0"
+        type: string
+      redis-packages-release-tag:
+        description: "Release tag for Redis shared package"
+        default: "v1.0.1"
+        type: string
 
 env:
   TZ: America/Argentina/Jujuy
@@ -27,13 +43,13 @@ env:
   NAMESPACE_QA: beplic-qa
   NAMESPACE_PROD: beplic-prod
   KAFKA_REPO_NAME: doppler-conversations-generic-kafka-lib
-  KAFKA_PACKAGES_RELEASE_TAG: v1.0.1
+  KAFKA_PACKAGES_RELEASE_TAG: ${{ inputs.kafka-packages-release-tag }}
   BASE_REPO_NAME: doppler-conversations-base-lib
-  BASE_PACKAGES_RELEASE_TAG: v1.0.0
+  BASE_PACKAGES_RELEASE_TAG: ${{ inputs.base-packages-release-tag }}
   API_GRAPH_REPO_NAME: doppler-conversations-api-graph-sdk-lib
-  API_GRAPH_PACKAGES_RELEASE_TAG: v1.0.0
+  API_GRAPH_PACKAGES_RELEASE_TAG: ${{ inputs.api-graph-packages-release-tag }}
   REDIS_REPO_NAME: doppler-conversations-generic-redis-lib
-  REDIS_PACKAGES_RELEASE_TAG: v1.0.1
+  REDIS_PACKAGES_RELEASE_TAG: ${{ inputs.redis-packages-release-tag }}
   GH_OWNER: FromDoppler
   SOURCE_VERSION: "${{ github.ref_name }}+${{ github.sha }}@${{ github.server_url}}/${{ github.repository }}"
   IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.docker-image-name }}
