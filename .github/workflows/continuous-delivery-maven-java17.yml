@@ -316,7 +316,7 @@ jobs:
               "deploy/${service}" \
               "${service}=${{ env.IMAGE_NAME }}:${{ github.ref_name }}" \
               --namespace "${NAMESPACE_QA}"
-            kubectl rollout status deploy/${service} -n ${NAMESPACE_QA}
+            kubectl rollout restart deploy/${service} -n ${NAMESPACE_QA}
           done
 
   deploy-prod:
@@ -351,5 +351,5 @@ jobs:
               "deploy/${service}" \
               "${service}=${{ env.IMAGE_NAME }}:${{ github.ref_name }}" \
               --namespace "${NAMESPACE_PROD}"
-            kubectl rollout status deploy/${service} -n ${NAMESPACE_PROD}
+            kubectl rollout restart deploy/${service} -n ${NAMESPACE_PROD}
           done
