@@ -22,7 +22,7 @@ on:
         type: boolean
       kafka-packages-release-tag:
         description: "Release tag for Kafka shared package"
-        default: "v1.0.0"
+        default: "v1.0.2"
         type: string
       base-packages-release-tag:
         description: "Release tag for Base shared package"
