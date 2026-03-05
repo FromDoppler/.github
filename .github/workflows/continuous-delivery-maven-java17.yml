@@ -41,7 +41,7 @@ env:
   TZ: America/Argentina/Jujuy
   MAVEN_USER_HOME: ${{ github.workspace }}/.maven
   NAMESPACE_QA: beplic-qa
-  NAMESPACE_PROD: beplic-prod
+  NAMESPACE_PROD: conversations-prod
   KAFKA_REPO_NAME: doppler-conversations-generic-kafka-lib
   KAFKA_PACKAGES_RELEASE_TAG: ${{ inputs.kafka-packages-release-tag }}
   BASE_REPO_NAME: doppler-conversations-base-lib
@@ -144,7 +144,7 @@ jobs:
             local repo="${GH_OWNER}/${repo_name}"
             local target_dir="external-libs/${repo_name}"
 
-            echo "Descargando release ${release_tag} de ${repo} (${label})"
+            echo "Downloading release ${release_tag} of ${repo} (${label})"
             mkdir -p "${target_dir}"
             if ! gh release download \
               "${release_tag}" \
@@ -152,30 +152,30 @@ jobs:
               --pattern '*.zip' \
               --pattern '*.jar' \
               --dir "${target_dir}"; then
-              echo "No se pudo descargar assets de release para ${repo}" >&2
+              echo "Couldn't download assets for ${repo}" >&2
               exit 1
             fi
 
             shopt -s nullglob
             for file in "${target_dir}"/*.zip; do
-              echo "Descomprimiendo ${file}"
+              echo "Unzipping ${file}"
               unzip_dir="${target_dir}/unzipped/$(basename "${file}" .zip)"
               mkdir -p "${unzip_dir}"
               unzip -o "${file}" -d "${unzip_dir}"
 
               mapfile -t maven_dirs < <(find "${unzip_dir}" -type d \( -name ".maven" -o -name ".m2" \))
               if (( ${#maven_dirs[@]} == 0 )); then
-                echo "No se encontró carpeta .maven/.m2 dentro de ${file};" >&2
+                echo "Couldn't find .maven/.m2 folder inside ${file};" >&2
               else
                 for mdir in "${maven_dirs[@]}"; do
-                  echo "Sincronizando repo Maven desde ${mdir} hacia ${MAVEN_USER_HOME}"
+                  echo "Syncing repo Maven from ${mdir} to ${MAVEN_USER_HOME}"
                   mkdir -p "${MAVEN_USER_HOME}"
                   cp -R "${mdir}/." "${MAVEN_USER_HOME}/"
                 done
               fi
             done
             for file in "${target_dir}"/*.jar; do
-              echo "Copiando ${file} a ${MAVEN_USER_HOME}"
+              echo "Copying ${file} to ${MAVEN_USER_HOME}"
               cp "${file}" "${MAVEN_USER_HOME}/"
             done
             shopt -u nullglob
@@ -300,7 +300,7 @@ jobs:
       - name: Save DigitalOcean kubeconfig with short-lived credentials
         run: |
           doctl kubernetes cluster kubeconfig save \
-          --expiry-seconds 600 ${{ secrets.CONVERSATIONS_CLUSTER_NAME }}
+          --expiry-seconds 600 ${{ secrets.CONVERSATIONS_QA_CLUSTER_NAME }}
 
       - name: Rollout to QA cluster
         shell: bash
@@ -335,7 +335,7 @@ jobs:
       - name: Save DigitalOcean kubeconfig with short-lived credentials
         run: |
           doctl kubernetes cluster kubeconfig save \
-          --expiry-seconds 600 ${{ secrets.CONVERSATIONS_CLUSTER_NAME }}
+          --expiry-seconds 600 ${{ secrets.CONVERSATIONS_PROD_CLUSTER_NAME }}
 
       - name: Rollout to prod cluster
         shell: bash
