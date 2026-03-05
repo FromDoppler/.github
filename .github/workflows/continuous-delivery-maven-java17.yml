@@ -41,7 +41,7 @@ env:
   TZ: America/Argentina/Jujuy
   MAVEN_USER_HOME: ${{ github.workspace }}/.maven
   NAMESPACE_QA: beplic-qa
-  NAMESPACE_PROD: beplic-prod
+  NAMESPACE_PROD: conversations-prod
   KAFKA_REPO_NAME: doppler-conversations-generic-kafka-lib
   KAFKA_PACKAGES_RELEASE_TAG: ${{ inputs.kafka-packages-release-tag }}
   BASE_REPO_NAME: doppler-conversations-base-lib
