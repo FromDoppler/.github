@@ -288,7 +288,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - docker-hub
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/INT'
     environment:
       name: qa
     steps:
