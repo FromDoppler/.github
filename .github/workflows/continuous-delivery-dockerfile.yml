@@ -28,7 +28,7 @@ jobs:
       IMAGE_NAME: ${{ github.repository_owner }}/${{ inputs.docker-image-name }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
@@ -69,7 +69,7 @@ jobs:
       IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.docker-image-name }}
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
