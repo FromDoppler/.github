@@ -115,7 +115,7 @@ jobs:
         run: mkdir -p "$MAVEN_USER_HOME"
 
       - name: Cache custom Maven repository
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.MAVEN_USER_HOME }}
           key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
